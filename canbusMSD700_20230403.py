@@ -158,7 +158,7 @@ while True:
     
     except BaseException as e:
         print("============")
-        print("probblem with -->",e)
+        print("problem with -->",e)
         print("============")
         # time.sleep(0)
         pass
