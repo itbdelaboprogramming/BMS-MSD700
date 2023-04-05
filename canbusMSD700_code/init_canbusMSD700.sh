@@ -25,9 +25,9 @@ sudo pip3 install python-can
 sudo pip3 install pymysql
 sleep 1
 # Check whether the command line is already exist in /etc/rc.local
-if ! sudo grep -q "sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/rc.local; then
+if ! sudo grep -q "sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/rc.local; then
     # Append the file into /etc/rc.local (1 line above "exit 0") to enable automatic run after reboot 
-    sudo sed -i "$(($(wc -l < /etc/rc.local)-0))i sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/rc.local
+    sudo sed -i "$(($(wc -l < /etc/rc.local)-0))i sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/rc.local
 fi
 sleep 1
 # Enable execute (run program) privilege /etc/rc.local
