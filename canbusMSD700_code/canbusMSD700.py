@@ -20,7 +20,7 @@ import pymysql
 
 time.sleep(10) # wait for RaspberryPi to complete its boot-up sequence
 
-# Configure and brung up the SocketCAN network interface
+# Configure and bring up the SocketCAN network interface
 os.system('sudo modprobe can && sudo modprobe can_raw') # load SocketCAN related kernel modules
 #os.system('sudo ip link set down can0') # disable can0 before config to implement changes in bitrate settings
 os.system('sudo ip link set can0 type can bitrate 250000 restart-ms 100') # configure can0
