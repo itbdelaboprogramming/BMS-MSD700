@@ -23,7 +23,7 @@ time.sleep(10) # wait for RaspberryPi to complete its boot-up sequence
 # Configure and bring up the SocketCAN network interface
 os.system('sudo modprobe can && sudo modprobe can_raw') # load SocketCAN related kernel modules
 #os.system('sudo ip link set down can0') # disable can0 before config to implement changes in bitrate settings
-os.system('sudo ip link set can0 type can bitrate 250000 restart-ms 100') # configure can0
+os.system('sudo ip link set can0 type can bitrate 250000 restart-ms 100') # configure can0 & set to 250000 bit/s
 os.system('sudo ip link set up can0') # enable can0 so configuration take effects
 
 # Specifications of Socket CAN (Check first the type)
@@ -40,7 +40,7 @@ i_battery_1_m = None
 i_battery_2_m = None
 soc_battery   = None
 
-# CAN-ID
+# CAN-ID based on battery CANBUS datasheet
 # Temperature
 TEMPERATURE_ID_1 = 0x055
 TEMPERATURE_ID_2 = 0x075
@@ -136,14 +136,14 @@ while True:
         time.sleep(1)
 
         # Database Connection
-        db = pymysql.connect(host='nicholas-dell-mysql.at.remote.it',   # Remote.it
-                             port=33001,                                # Remote.it
-                             user='pi',                                 # MySQL
-                             password='raspberrypi',                    # MySQL
-                             db='scib')                                 # MySQL
-
+        db = pymysql.connect(host='*******************',                   # Change with host name of database (Remote.it)
+                             port=********,                                # Change with port name of database (Remote.it)
+                             user='*********',                             # MySQL user
+                             password='*******',                           # MySQL password
+                             db='*********')                               # MySQL database
         cur = db.cursor()
-
+        
+        # 'monitoring_scib' refers to database querry
         add_c0 = "INSERT INTO `monitoring_scib`(Timestamp, Temperature_Module_1,Temperature_Module_2, Voltage_Module_1, Voltage_Module_2, Current_Module_1, Current_Module_2, SoC) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"
         cur.execute(add_c0,((timer.strftime("%Y-%m-%d %H:%M"),
                              t_battery_1,
