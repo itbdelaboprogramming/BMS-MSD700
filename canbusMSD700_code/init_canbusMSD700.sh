@@ -24,13 +24,19 @@ sleep 1
 sudo pip3 install python-can
 sudo pip3 install pymysql
 sleep 1
-# Check whether the command line is already exist in /etc/rc.local
-if ! sudo grep -q "sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/rc.local; then
-    # Append the file into /etc/rc.local (1 line above "exit 0") to enable automatic run after reboot 
-    sudo sed -i "$(($(wc -l < /etc/rc.local)-0))i sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/rc.local
+
+# install and enable Cron to automate task
+sudo apt install cron
+sudo systemctl enable cron
+# Check whether the command line is already exist in /etc/crontab
+if ! sudo grep -q "@reboot root sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/crontab; then
+    # Append the file into /etc/crontab to enable automatic run after reboot
+    sudo su -c "echo \"@reboot root sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &\" >> /etc/crontab"
 fi
 sleep 1
 # Enable execute (run program) privilege /etc/rc.local
 sudo chmod +x /etc/rc.local
 sleep 1
+echo "Installation of canbusMSD700 system is finished"
+echo "Please reboot the RaspberryPi"
 exit
