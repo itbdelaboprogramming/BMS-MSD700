@@ -1,5 +1,4 @@
 """
-#!/usr/bin/env python
 #title           :canbusMSD700.py
 #description     :CAN-BUS Communication between SCiB Battery and Raspberry Pi
 #author          :Fajar Muhammad Noor Rozaqi, Nicholas Putra Rihandoko
@@ -137,7 +136,7 @@ while True:
 
         # Database Connection
         db = pymysql.connect(host='*******************',                   # Change with host name of database (Remote.it)
-                             port=********,                                # Change with port name of database (Remote.it)
+                             port=30005,                                # Change with port name of database (Remote.it)
                              user='*********',                             # MySQL user
                              password='*******',                           # MySQL password
                              db='*********')                               # MySQL database

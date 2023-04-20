@@ -39,4 +39,4 @@ sudo chmod +x /etc/rc.local
 sleep 1
 echo "Installation of canbusMSD700 system is finished"
 echo "Please reboot the RaspberryPi"
-exit
+exit 0
