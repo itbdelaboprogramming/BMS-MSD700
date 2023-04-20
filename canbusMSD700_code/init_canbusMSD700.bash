@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Install can-utils package for debugging CAN massages
 sudo apt install can-utils
