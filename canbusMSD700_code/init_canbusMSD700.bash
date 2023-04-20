@@ -1,4 +1,12 @@
 #!/bin/bash
+#title           :init_canbusMSD700.bash
+#description     :CAN Hat module installation script (main)
+#author          :Nicholas Putra Rihandoko
+#date            :2023/04/03
+#version         :2.1
+#usage           :BMS-Python
+#notes           :take a look at README.txt for further info
+#==============================================================================
 
 # Install can-utils package for debugging CAN massages
 sudo apt install can-utils
@@ -29,14 +37,15 @@ sleep 1
 sudo apt install cron
 sudo systemctl enable cron
 # Check whether the command line is already exist in /etc/crontab
-if ! sudo grep -q "@reboot root sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/crontab; then
+if ! sudo grep -q "@reboot root sleep 5 && sudo bash /home/$(logname)/canbusMSD700_code/canbusMSD700.py &" /etc/crontab; then
     # Append the file into /etc/crontab to enable automatic run after reboot
-    sudo su -c "echo \"@reboot root sleep 5 && sudo sh /home/$(logname)/canbusMSD700_code/canbusMSD700.py &\" >> /etc/crontab"
+    sudo su -c "echo \"@reboot root sleep 5 && sudo bash /home/$(logname)/canbusMSD700_code/canbusMSD700.py &\" >> /etc/crontab"
 fi
 sleep 1
 # Enable execute (run program) privilege /etc/rc.local
 sudo chmod +x /etc/rc.local
 sleep 1
+echo""
 echo "Installation of canbusMSD700 system is finished"
 echo "Please reboot the RaspberryPi"
 exit 0
