@@ -22,12 +22,6 @@ sudo bash canbus_code/init_canbus.bash
 You still need to prepare the script to automatically run this program after each bootup. Check [key_code](https://github.com/itbdelaboprogramming/IoT-Gateway) for related features.
 
 ## 設置方法
-Waveshare RS485/CAN HAT (12M Crsytal)モジュールのインストール手順です。
-動作確認済みです：
-    - RaspberryPi 3B+/4
-    - OS Raspbian Buster/Bullseye
-    - Python 3.7
-
 初回インストール時は、CANハット（ハードウェア）モジュールを初めてインストールしたら、RaspberryPiの電源を入れ、`canbus_code` フォルダを `/home/$(logname)/` または `~/` ディレクトリにコピーしてください。
 
 次に、ターミナルで以下の手順を実行します：
