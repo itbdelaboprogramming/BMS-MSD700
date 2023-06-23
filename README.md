@@ -19,7 +19,7 @@ sudo bash canbus_code/init_canbus.bash
 1. Follow the instructions on the terminal.
 2. Close terminal when it is done.
 
-You still need to prepare the script to automatically run this program after each bootup. Check [key_code] (https://github.com/itbdelaboprogramming/IoT-Gateway) for related features.
+You still need to prepare the script to automatically run this program after each bootup. Check [key_code](https://github.com/itbdelaboprogramming/IoT-Gateway) for related features.
 
 ## 設置方法
 Waveshare RS485/CAN HAT (12M Crsytal)モジュールのインストール手順です。
