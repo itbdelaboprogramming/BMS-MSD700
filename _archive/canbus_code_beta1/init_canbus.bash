@@ -9,7 +9,6 @@
 #==============================================================================
 
 # Install can-utils package for debugging CAN massages
-sudo apt update
 sudo apt install can-utils
 sleep 1
 # Check whether the command line is already exist in /boot/config.txt

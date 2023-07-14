@@ -11,7 +11,6 @@
 """
 
 import logging
-import subprocess
 import datetime
 import csv
 import os

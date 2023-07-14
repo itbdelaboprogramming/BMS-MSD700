@@ -12,7 +12,7 @@
 import time
 
 class node:
-    def __init__(self,name,client,timeout=1):
+    def __init__(self,name,client,timeout=1,custom=[]):
         self._name      = name
         self._client    = client
         self._timeout   = timeout
@@ -63,6 +63,8 @@ class node:
             "Module_Voltage_1"  :{"id":0x056, "start":3, "end":4, "scale":4.8832/1000, "bias":0, "round":2}, # in Volts
             "Module_Voltage_2"  :{"id":0x076, "start":3, "end":4, "scale":4.8832/1000, "bias":0, "round":2} # in Volts
             }
+        # Improve latency by reducing the self._can_id dictionary 
+        if custom:  {key: value for key, value in self._can_id.items() if value["id"] in custom}
 
     def reset_read_attr(self):
         # Reset (and/or initiate) object's attributes
