@@ -1,10 +1,10 @@
 """
 #title           :query.py
-#description     :custom functions for PyModbus ans PyMySQL, used through main__modbus.py file
+#description     :custom functions for PyMySQL ant others
 #author          :Nicholas Putra Rihandoko
-#date            :2023/05/12
+#date            :2023/07/19
 #version         :0.1
-#usage           :Modbus programming in Python
+#usage           :Python programming
 #notes           :
 #python_version  :3.7.3
 #==============================================================================
@@ -14,12 +14,52 @@ import logging
 import pymysql
 import signal
 import datetime
+import time
 import csv
 import os
 
 # Define the directory of the backup file and the data to be logged
 log_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'save')
 log_limit = 31
+
+#################################################################################################################
+
+def limit_db_rows(mysql_server,row_limit,timeout=2):
+    mysql_query = ("DELETE FROM {} WHERE id NOT IN ( SELECT id FROM ( "
+                       "SELECT id FROM {} ORDER BY id DESC LIMIT %s ) AS limited_rows )".format(
+                           mysql_server["table"],mysql_server["table"]))
+    connect_mysql(mysql_server,mysql_query,[row_limit],timeout)
+
+def dgps_correction(mysql_server,rtc,raw_gps,timeout=2):
+    try:
+        if rtc: mysql_query = ("SELECT diff_lat, diff_lon, num_sats, hdop, lat, lon FROM {} WHERE RTC = '{}' ORDER BY id DESC LIMIT 1".format(mysql_server["table"],rtc))
+        else: mysql_query = ("SELECT diff_lat, diff_lon, num_sats, hdop, lat, lon FROM {} ORDER BY id DESC LIMIT 1".format(mysql_server["table"]))
+        # Read the previous timestamps from database
+        i = 1
+        while True:
+            base_station = connect_mysql(mysql_server,mysql_query,timeout=timeout)
+            if base_station:
+                # Change the format into suitable timedate objects
+                for data in base_station:
+                    new_latitude = round(raw_gps.Latitude + data[0],7)
+                    new_longitude = round(raw_gps.Longitude + data[1],7)
+                    diff_sats = raw_gps.Count_Satellites - data[2]
+                    diff_hdop = round(raw_gps.HDOP - data[3],2)
+                    ref_raw_lat = round(data[4],7)
+                    ref_raw_lon = round(data[5],7)
+                break
+            else:
+                print(" -- no RTC data, retrying -- ")
+                if i == 3: break
+                else:
+                    time.sleep(1)
+                    i+=1
+        if base_station: return [new_latitude, new_longitude, diff_sats, diff_hdop, ref_raw_lat, ref_raw_lon]
+        else:
+            print(" << skipping RTC data >> ")
+            print("")
+            return ["","","","","",""]
+    except: return ["","","","","",""]
 
 #################################################################################################################
 
@@ -66,11 +106,11 @@ def get_updown_time(mysql_server,timer,bootup_time,timeout=2):
 
 def handle_timeout(signum, frame):
     raise TimeoutError("Query execution timed out")
+signal.signal(signal.SIGALRM, handle_timeout)
 
 def connect_mysql(mysql_server,mysql_query,data=None,timeout=2):
     #return
     # Set the signal handler for the timeout
-    signal.signal(signal.SIGALRM, handle_timeout)
     signal.alarm(timeout)  # Start the timeout countdown
     try:
         # Setup Raspberry Pi as MySQl Database client
@@ -197,28 +237,14 @@ def print_response(server,timer):
         print("Time             :", timer.strftime("%d/%m/%Y-%H:%M:%S"))
         print("CPU Temperature  :", cpu_temp, "degC")
         for attr_name, attr_value in vars(server[i]).items():
-            if not isinstance(attr_value, list):
-                if "SOC" in attr_name:
-                    print(attr_name, "=", attr_value, "%")
-                elif "Frequency" in attr_name:
-                    print(attr_name, "=", attr_value, "Hz")
-                elif "Voltage" in attr_name:
-                    print(attr_name, "=", attr_value, "Volts")
-                elif "Current" in attr_name:
-                    print(attr_name, "=", attr_value, "Amps")
-                elif ("Energy" in attr_name) or ("Power" in attr_name) or ("Capacity" in attr_name) or ("Charge" in attr_name) :
-                    print(attr_name, "=", attr_value)
-                elif "Temperature" in attr_name:
-                    print(attr_name, "=", attr_value, "degC")
-                elif "Count" in attr_name:
-                    print(attr_name, "=", attr_value)
-                elif "0x" in attr_name:
-                    print(attr_name, "=", attr_value)
-            else:
-                #continue
-                if not isinstance(attr_value[0], list):
+            if not attr_name.startswith("_"):
+                if not isinstance(attr_value, list):
                     print(attr_name, "=", attr_value)
                 else:
-                    for i in range(len(attr_value)):
-                        print(attr_name, i+1, "=", attr_value[i])
+                    #continue
+                    if not isinstance(attr_value[0], list):
+                        print(attr_name, "=", attr_value)
+                    else:
+                        for i in range(len(attr_value)):
+                            print(attr_name, i+1, "=", attr_value[i])
         print("")

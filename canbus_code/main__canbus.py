@@ -85,7 +85,7 @@ def update_database(server):
                 cpu_temp, server.Module_Voltage_1, server[0].Module_Voltage_2,
                 server.Module_Current_1, server.Module_Current_2, (server.Module_Current_1 + server.Module_Current_2),
                 server.Temperature_1, server.Temperature_2, round((server.Temperature_1 + server.Temperature_2)/2,1)]
-    filename = 'modbus_save.csv'
+    filename = 'canbus_log.csv'
 
     query.log_in_csv(title ,data, timer, filename)
     query.retry_mysql(mysql_server, mysql_query, filename, mysql_timeout)
@@ -116,8 +116,7 @@ while not init:
         # First run (start-up) sequence
         if first[0]:
             first[0] = False
-            # time counter
-            start = datetime.datetime.now()
+            start = datetime.datetime.now() # time counter
             
         # Send the command to read the measured value and do all other things
         read_canbus(server)
@@ -133,9 +132,9 @@ while not init:
         
         time.sleep(interval)
     
-    except BaseException as e:
+    except Exception as e:
         # Print the error message
-        print("problem with -->",e)
+        print(e)
         print("<===== ===== retrying ===== =====>")
         print("")
-        time.sleep(1)
+        time.sleep(3)
