@@ -27,11 +27,11 @@ timeout         = 2 # the maximum time the master/client will wait for response 
 interval       = 1 # the period between each subsequent communication routine/loop (in seconds)
 
 # Define MySQL Database parameters
-mysql_server    = {"host":"10.4.171.204",
-                    "user":"pi",
-                    "password":"raspberrypi",
-                    "db":"test",
-                    "table":"test",
+mysql_server    = {"host":"******",
+                    "user":"******",
+                    "password":"******",
+                    "db":"******",
+                    "table":"******",
                     "port":3306}
 mysql_timeout   = 3 # the maximum time this device will wait for completing MySQl query (in seconds)
 mysql_interval  = 60 # the period between each subsequent update to database (in seconds)
@@ -56,8 +56,7 @@ def setup_canbus():
 def read_canbus(server):
     #return
     try:
-        pass
-        server.send_command(command="receive")
+        server.send_command(command="receive",address=["Module_Current_1","Module_Current_2","Module_Voltage_1","Module_Voltage_2","Temperature_1","Temperature_2"])
     except Exception as e:
         # Print the error message
         print("problem with",server._name,":")

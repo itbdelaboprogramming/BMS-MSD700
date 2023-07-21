@@ -70,63 +70,39 @@ class node:
             if not attr_name.startswith("_"):
                 setattr(self, attr_name, 0)
 
-    def save_read(self,message,address,save):
+    def save_read(self,message):
         # Save responses to object's attributes
-        index_to_remove = []
-        for s, a in enumerate(address):
-            if a == message.arbitration_id:
+        for key, value in self._can_id.items():
+            if value["id"] == message.arbitration_id:
                 # Converting HEX Data from CAN-BUS into decimal
                 i = 0
-                n = self._can_id[save[s]]["end"] - self._can_id[save[s]]["start"]
+                n = value["end"] - value["start"]
                 sorted_data = []
-                for b in range(self._can_id[save[s]]["start"],self._can_id[save[s]]["end"]+1):
+                for b in range(value["start"],value["end"]+1):
                     sorted_data[i] = (message.data[b] << 8*n)
                     i=i+1
                     n=n-1
                 raw_data = 0x0
                 for x in sorted_data: raw_data = raw_data | x
-                val = round((raw_data - self._can_id[save[s]]["bias"]) * self._can_id[save[s]]["scale"], self._can_id[save[s]]["round"])
-                setattr(self, save[s], val)
-                index_to_remove.append(s)
-        
-        # Remove read address (id) that has been read
-        for r in reversed(index_to_remove):
-            address.pop(r)
-            save.pop(r)
-        return [address,save]
+                val = round((raw_data - value["bias"]) * value["scale"], value["round"])
+                setattr(self, key, val)
 
     def dump_sequence(self,param):
         pass
 
-    def receive_sequence(self,address,save):
-        while True:
-            message = self._client.recv(self._timeout)
-            if message is None:
-                print("-- failed to detect bus activity --")
-                break
-            else:
-                # Decode message if it is in the read address list until all is read
-                if address: 
-                    if message.arbitration_id in address:
-                        [address,save] = self.save_read(message,address,save)
-                        #print("Battery data: ", message.arbitration_id)
-                else:
-                    print("-- read completed --")
-                    break
-        return
+    def receive_sequence(self):
+        message = self._client.recv(self._timeout)
+        if message is not None:
+            self.save_read(message)
+            #print("Battery data: ", message.arbitration_id)
+        else:
+            print("-- failed to detect bus activity --")   
+        return message
 
-    def send_command(self,command,address,param=None):
+    def send_command(self,command,param=None):
         # Send the command and read response with function_code 0x03 (3)
         if command == "receive":
-            address = [a.lower() if isinstance(a,str) else a for a in address]
-            addr = []
-            save = []
-            for key, value in self._can_id.items():
-                if key.lower() in address or value["id"] in address:
-                    addr.append(value["id"])
-                    save.append(key)
-            addr, save = zip(*sorted(zip(addr, save)))
-            self.receive_sequence(addr,save)
+            self.receive_sequence()
             #print("-- read is a success --")
         elif command == "dump":
             self.dump_sequence(param)
