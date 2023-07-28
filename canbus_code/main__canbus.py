@@ -1,6 +1,6 @@
 """
 #title           :main__canbus.py
-#description     :CAN-BUS Communication between SCiB Battery and Raspberry Pi
+#description     :CANbus Communication between SCiB Battery and Raspberry Pi
 #author          :Fajar Muhammad Noor Rozaqi, Nicholas Putra Rihandoko
 #date            :2023/04/03
 #version         :2.1
@@ -12,17 +12,17 @@
 
 # Import library
 import query
-import can # code packet for CAN-BUS communication
+import can # code packet for CANbus communication
 import datetime # RTC Real Time Clock
 import time
 import os
 from lib import toshiba_SCiB as battery
 
-# Define CAN-BUS communication parameters
-bustype         = 'socketcan' # CAN-BUS interface for Waveshare RS485/CAN Hat module
-channel         = 'can0' # location of channel used for CAN-BUS Communication
-bitrate         = 250000 # Toshiba SCiB speed of CAN-BUS = 250000
-restart         = 100 # the time it takes to restart CAN-BUS communication if it fails (in milisecond)
+# Define CANbus communication parameters
+bustype         = 'socketcan' # CANbus interface for Waveshare RS485/CAN Hat module
+channel         = 'can0' # location of channel used for CANbus Communication
+bitrate         = 250000 # Toshiba SCiB speed of CANbus = 250000
+restart         = 100 # the time it takes to restart CANbus communication if it fails (in milisecond)
 timeout         = 2 # the maximum time the master/client will wait for response from slave/server (in seconds)
 interval       = 1 # the period between each subsequent communication routine/loop (in seconds)
 
@@ -38,8 +38,6 @@ mysql_interval  = 60 # the period between each subsequent update to database (in
 
 #query.debugging()  # Monitor Modbus communication for debugging
 init = True  # variable to check Modbus initialization
-bootup_time = datetime.datetime.now()   # Used to gat the startup timestamp of the script
-timer = bootup_time
 
 def setup_canbus():
     global bustype, channel, bitrate
@@ -64,11 +62,11 @@ def read_canbus(server):
         print("<===== ===== continuing ===== =====>")
         print("")
 
-def update_database(server):
-    global mysql_server, timer, bootup_time
+def update_database(server, timer):
+    global mysql_server
     # Define MySQL queries and data which will be used in the program
     cpu_temp = query.get_cpu_temperature()
-    [uptime, total_uptime, downtime, total_downtime] = query.get_updown_time(mysql_server, timer, bootup_time, mysql_timeout)
+    [bootup_time, uptime, total_uptime, downtime, total_downtime] = query.get_updown_time(mysql_server, timer, mysql_timeout)
     title = ["startup_date","startup_time","uptime","total_uptime",
                 "shutdown_date","shutdown_time","downtime","total_downtime",
                 "battery_percentage","battery_voltage",
@@ -91,25 +89,25 @@ def update_database(server):
 
 #################################################################################################################
 
-# Checking the connection CAN-BUS
+# Checking the connection CANbus
 while init:
     try:
         # Setup Raspberry Pi as Modbus client/master
         server = setup_canbus()
-        print("<===== Connected to CAN-BUS Communication =====>")
+        print("<===== Connected to CANbus Communication =====>")
         print("")
         init = False
 
     except Exception as e:
         # Print the error message
-        print("problem with CAN-BUS communication:")
+        print("problem with CANbus communication:")
         print(e)
         print("<===== ===== retrying ===== =====>")
         print("")
         time.sleep(3)
 
 first = [True, True]
-# Reading a CAN-BUS message and Upload to database sequence
+# Reading a CANbus message and Upload to database sequence
 while not init:
     try:
         # First run (start-up) sequence
@@ -127,7 +125,7 @@ while not init:
             start = timer
             first[1] = False
             # Update/push data to database
-            update_database(server)
+            update_database(server, timer)
         
         time.sleep(interval)
     

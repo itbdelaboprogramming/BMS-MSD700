@@ -15,8 +15,8 @@ class node:
     def __init__(self,name,client,timeout=1):
         self._name      = name
         self._client    = client
-        self._timeout   = timeout
-        # Library of CAN-BUS Arbitration ID
+        self._timeout   = timeout       # maximum time to wait for CANbus message (in seconds)
+        # Library of CANbus Arbitration ID
         self._can_id = {
             "Power_On_Time_1"   :{"id":0x050, "start":1, "end":4, "scale":0.1, "bias":0, "round":1}, # in seconds
             "Power_On_Time_2"   :{"id":0x070, "start":1, "end":4, "scale":0.1, "bias":0, "round":1}, # in seconds
@@ -67,70 +67,79 @@ class node:
     def reset_read_attr(self):
         # Reset (and/or initiate) object's attributes
         for attr_name, attr_value in vars(self).items():
-            if not attr_name.startswith("_"):
-                setattr(self, attr_name, 0)
+            if not attr_name.startswith("_"): setattr(self, attr_name, 0)
 
     def save_read(self,message,address,save):
         # Save responses to object's attributes
         index_to_remove = []
         for s, a in enumerate(address):
             if a == message.arbitration_id:
-                # Converting HEX Data from CAN-BUS into decimal
-                i = 0
-                n = self._can_id[save[s]]["end"] - self._can_id[save[s]]["start"]
-                sorted_data = []
-                for b in range(self._can_id[save[s]]["start"],self._can_id[save[s]]["end"]+1):
-                    sorted_data[i] = (message.data[b] << 8*n)
-                    i=i+1
-                    n=n-1
-                raw_data = 0x0
-                for x in sorted_data: raw_data = raw_data | x
-                val = round((raw_data - self._can_id[save[s]]["bias"]) * self._can_id[save[s]]["scale"], self._can_id[save[s]]["round"])
+                if save[s].startswith('Hx'):
+                    val=message.data
+                else:
+                    # Converting HEX Data from CANbus into decimal
+                    sorted_data, raw_data, i, n = [], 0x0, 0, (self._can_id[save[s]]["end"] - self._can_id[save[s]]["start"])
+                    for b in range(self._can_id[save[s]]["start"],self._can_id[save[s]]["end"]+1):
+                        sorted_data[i] = (message.data[b] << 8*n); i+=1; n-=1
+                    for x in sorted_data: raw_data = raw_data | x
+                    val = round((raw_data - self._can_id[save[s]]["bias"]) * self._can_id[save[s]]["scale"], self._can_id[save[s]]["round"])
                 setattr(self, save[s], val)
                 index_to_remove.append(s)
         
         # Remove read address (id) that has been read
-        for r in reversed(index_to_remove):
-            address.pop(r)
-            save.pop(r)
-        return [address,save]
+        for r in reversed(index_to_remove): address.pop(r); save.pop(r)
+        return address, save
+
+    def map_address(self,raw_address):
+        # Configure the message id (addr) and the attribute name where the value is saved (save)
+        addr, save, temp = [], [], [0]*len(raw_address)
+
+        # Match the address with the information in self._can_id library
+        for key, value in self._can_id.items():
+            for i, a in enumerate(raw_address):
+                if isinstance(a,list):
+                    if (a[0] == value["id"] and a[1] == value["start"]) and key not in save:
+                        addr.append(value["id"]); save.append(key)
+                        temp[i] = 1; break
+                else:
+                    if (a == key.lower() or a == value["id"]) and key not in save:
+                        addr.append(value["id"]); save.append(key)
+                        temp[i] = 1; break
+
+        # If the address is not available in the library, then use it as is
+        for i, t in enumerate(temp):
+            if (not t) and (raw_address[i] not in addr) and (raw_address[i] not in [s.lower() for s in save]):
+                if isinstance((raw_address[i]),str):
+                    print(" -- unrecognized arbitration ID for '{}' --".format(raw_address[i]))
+                else:
+                    addr.append(raw_address[i]); save.append('Hx'+hex(raw_address[i])[2:].zfill(3).upper())
+                    print(" -- address '{}' may gives raw data, use with discretion --".format(save[-1]))
+        addr, save = zip(*sorted(zip(addr, save)))
+        return list(addr), list(save)
+
+    def receive_sequence(self,address):
+        addr, save = self.map_address(address)
+        # read messages in CANbus port
+        while True:
+            if addr:
+                message = self._client.recv(self._timeout)
+                if message:
+                    # Decode message if it is in the read address list until all is read
+                    if message.arbitration_id in addr:
+                        addr, save = self.save_read(message,addr,save)
+                else: print("-- failed to detect bus activity --"); break
+            else: print("-- read completed --"); break
 
     def dump_sequence(self,param):
         pass
-
-    def receive_sequence(self,address,save):
-        while True:
-            message = self._client.recv(self._timeout)
-            if message is None:
-                print("-- failed to detect bus activity --")
-                break
-            else:
-                # Decode message if it is in the read address list until all is read
-                if address: 
-                    if message.arbitration_id in address:
-                        [address,save] = self.save_read(message,address,save)
-                        #print("Battery data: ", message.arbitration_id)
-                else:
-                    print("-- read completed --")
-                    break
-        return
 
     def send_command(self,command,address,param=None):
         # Send the command and read response with function_code 0x03 (3)
         if command == "receive":
             address = [a.lower() if isinstance(a,str) else a for a in address]
-            addr = []
-            save = []
-            for key, value in self._can_id.items():
-                if key.lower() in address or value["id"] in address:
-                    addr.append(value["id"])
-                    save.append(key)
-            addr, save = zip(*sorted(zip(addr, save)))
-            self.receive_sequence(addr,save)
+            self.receive_sequence(address)
             #print("-- read is a success --")
         elif command == "dump":
             self.dump_sequence(param)
             #print("-- talk is a success --")
-        else:
-            print("-- unrecognized command --")
-            return
+        else: print("-- unrecognized command --")

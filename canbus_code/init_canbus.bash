@@ -1,10 +1,10 @@
 #!/bin/bash
 #title           :init_canbus.bash
-#description     :CAN Hat module installation script
+#description     :CAN/RS485 Hat module installation script
 #author          :Nicholas Putra Rihandoko
 #date            :2023/06/21
 #version         :2.1
-#usage           :BMS-Python
+#usage           :CANbus programming in Python
 #notes           :
 #==============================================================================
 
@@ -42,7 +42,9 @@ sudo chmod 777 /home/$(logname)/canbus_code/save/canbus_log.csv
 echo ""
 echo "=========================================================="
 echo ""
-echo "Installation of CAN-BUS system is finished"
+echo "Installation of CANbus system is finished"
+echo ""
+echo "Please reboot the RaspberryPi, just in case :)"
 echo ""
 echo "=========================================================="
 echo ""
