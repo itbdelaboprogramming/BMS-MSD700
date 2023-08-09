@@ -64,10 +64,21 @@ class node:
             "Module_Voltage_2"  :{"id":0x076, "start":3, "end":4, "scale":4.8832/1000, "bias":0, "round":2} # in Volts
             }
 
-    def reset_read_attr(self):
+    def reset_rec_attr(self):
         # Reset (and/or initiate) object's attributes
         for attr_name, attr_value in vars(self).items():
             if not attr_name.startswith("_"): setattr(self, attr_name, 0)
+
+    def map_rec_attr(self,raw_address):
+        # get the attribute data using its CANbus memory address
+        mapped_addr = []
+        for key, value in self._can_id.items():
+            for a in raw_address:
+                if value["id"] == a:
+                    try: mapped_addr.append([key, getattr(self, key)])
+                    except: print(" -- one or more mapped address has not been read from server --")
+                    break
+        return mapped_addr
 
     def save_read(self,message,address,save):
         # Save responses to object's attributes
@@ -90,7 +101,7 @@ class node:
         for r in reversed(index_to_remove): address.pop(r); save.pop(r)
         return address, save
 
-    def map_address(self,raw_address):
+    def count_address(self,raw_address):
         # Configure the message id (addr) and the attribute name where the value is saved (save)
         addr, save, temp = [], [], [0]*len(raw_address)
 
@@ -118,7 +129,7 @@ class node:
         return list(addr), list(save)
 
     def receive_sequence(self,address):
-        addr, save = self.map_address(address)
+        addr, save = self.count_address(address)
         # read messages in CANbus port
         while True:
             if addr:

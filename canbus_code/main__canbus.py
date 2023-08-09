@@ -54,6 +54,8 @@ def setup_canbus():
 def read_canbus(server):
     #return
     try:
+        server.send_command(command="receive",address=[0x050, 0x053, 0x055, 0x056])
+        server.send_command(command="receive",address=[[0x050,1], [0x055,3], [0x056,1], [0x056,3]])
         server.send_command(command="receive",address=["Module_Current_1","Module_Current_2","Module_Voltage_1","Module_Voltage_2","Temperature_1","Temperature_2"])
     except Exception as e:
         # Print the error message
