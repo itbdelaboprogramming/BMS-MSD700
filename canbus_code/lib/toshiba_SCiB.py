@@ -10,6 +10,7 @@
 #==============================================================================
 """
 import time
+import can
 
 class node:
     def __init__(self,name,client,timeout=1):
@@ -103,7 +104,7 @@ class node:
 
     def count_address(self,raw_address):
         # Configure the message id (addr) and the attribute name where the value is saved (save)
-        addr, save, temp = [], [], [0]*len(raw_address)
+        addr, save, raw = [], [], [True]*len(raw_address)
 
         # Match the address with the information in self._can_id library
         for key, value in self._can_id.items():
@@ -111,15 +112,15 @@ class node:
                 if isinstance(a,list):
                     if (a[0] == value["id"] and a[1] == value["start"]) and key not in save:
                         addr.append(value["id"]); save.append(key)
-                        temp[i] = 1; break
+                        raw[i] = False; break
                 else:
                     if (a == key.lower() or a == value["id"]) and key not in save:
                         addr.append(value["id"]); save.append(key)
-                        temp[i] = 1; break
+                        raw[i] = False; break
 
         # If the address is not available in the library, then use it as is
-        for i, t in enumerate(temp):
-            if (not t) and (raw_address[i] not in addr) and (raw_address[i] not in [s.lower() for s in save]):
+        for i, r in enumerate(raw):
+            if r and (raw_address[i] not in addr) and (raw_address[i] not in [s.lower() for s in save]):
                 if isinstance((raw_address[i]),str):
                     print(" -- unrecognized arbitration ID for '{}' --".format(raw_address[i]))
                 else:
@@ -143,6 +144,12 @@ class node:
 
     def dump_sequence(self,param):
         pass
+        ### Example dumping message using CAN ODB2 arbitration ID
+        #obd2_message = can.Message(arbitration_id=0x7E0, data=[0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], is_extended_id=False)
+        #self._client.send(obd2_message)
+        ### Example dumping message using CAN J1939 arbitration ID
+        #j1939_message = can.Message(arbitration_id=0x18DAF110, data=[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08], is_extended_id=True)
+        #self._client.send(j1939_message)
 
     def send_command(self,command,address,param=None):
         # Send the command and read response with function_code 0x03 (3)
